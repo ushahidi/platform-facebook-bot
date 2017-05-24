@@ -11,6 +11,5 @@
 |
 */
 
-$app->get('/', function () use ($app) {
-    return $app->version();
-});
+$app->get('/webhook', ['uses' => 'BotController@initialise']);
+$app->post('/webhook', ['uses' => 'BotController@receiveMessage']);
