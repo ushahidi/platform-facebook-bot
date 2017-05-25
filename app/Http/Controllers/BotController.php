@@ -11,9 +11,11 @@ class BotController extends Controller
     }
 
     public function initialise() {
-        $this->messenger->verifyWebhook();
+       return $this->messenger->verifyWebhook();
     }
 
-    public function recieveMessage(Request $request){}
+    public function receiveMessage(Request $request){
+        $this->messenger->startConversation($request);
+    }
 
 }
