@@ -3,6 +3,7 @@
 namespace App\Services;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
+use App\Models\Report;
 
 
 class FBMessenger
@@ -86,10 +87,18 @@ class FBMessenger
         }
         $recipient = $request->input(self::SENDER_ID);
         $id = $request->input(self::MESSAGE_ID);
+        $ongoingReport = Report::where('user_id',$recipient)
+            ->first();
+
         if($recipient !== $id) {
             switch ($message) {
                 case 'first hand shake':
                     $reply = $this->createReply(self::BUTTONS, config('replies.start_buttons'), config('replies.welcome'));
+                    $this->sendMessage($reply, $recipient);
+                    break;
+                case 'exit':
+                    Report::where('user_id', $recipient)->delete();
+                    $reply = $this->createReply(self::BUTTONS, config('replies.start_buttons'), config('replies.next'));
                     $this->sendMessage($reply, $recipient);
                     break;
                 case 'make report':
@@ -98,8 +107,35 @@ class FBMessenger
                     break;
                 case 'start':
                     $reply = $this->createReply(self::TEXT, config('replies.title'));
+                    Report::create(['user_id' => $recipient, 'last_question'=> 'title']);
                     $this->sendMessage($reply, $recipient);
                     break;
+                default:
+                    if($ongoingReport) {
+                        switch($ongoingReport->last_question) {
+                            case 'title':
+                            // save to title
+                            // send description
+                            case 'description':
+                            // save to description
+                            // send Image
+                            case 'image':
+                            // save image image
+                            // send Location
+                            case 'location':
+                            // save location
+                            // display results
+                            // ask if send post or start over
+                            case 'send post':
+                            // send to platform
+                        }
+                        break;
+                    } else {
+                         $reply = $this->createReply(self::BUTTONS, config('replies.start_buttons'), config('replies.next'));
+                        $this->sendMessage($reply, $recipient);
+                        break;
+                    }
+                
         }
         return response('Accepted', 200);
     }

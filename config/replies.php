@@ -1,6 +1,7 @@
 <?php
     return [
     'welcome' => 'Hi and welcome! What do you want to do?',
+    'next' => 'What do you want to do next?',
     'start_buttons' =>  [
                         [
                             'type'=>'web_url',
