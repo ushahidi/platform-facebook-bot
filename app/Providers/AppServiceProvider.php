@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Services\FBMessenger;
+use App\Services\PlatformApiService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(FBMessenger::class, function($app) {
             return new FBMessenger(config('options.facebook'));
+        });
+        $this->app->singleton(PlatformApiService::class, function($app) {
+            return new PlatformApiService(config('options.ushahidi'));
         });
     }
 }
