@@ -51,7 +51,7 @@ class PlatformApiService
             $image = $image_response->getBody()->getContents();
             // saving it to platform
             $media = $platformClient->request('POST','api/v3/media', [
-                'multipart'=> [['name' => 'file', 'contents'=> $image, 'filename'=> 'sample.jpg']]
+                'multipart'=> [['name' => 'file', 'contents'=> $image, 'filename'=> 'sample.png']]
             ]);
             // getting image-id
             $mediaId = json_decode($media->getBody()->getContents())->id;
@@ -59,17 +59,25 @@ class PlatformApiService
         catch (ClientException $e) {
             // TODO: Send reply back to fb
             \Log::info('error when uploading file');
+        } catch (Exception $e) {
+            \Log::info(print_r('error', true));
+            \Log::info(print_r($e, true));
+        } catch(RequestException $e) {
+            \Log::info(print_r('error request', true));
+            \Log::info(print_r($e, true));
         }
         // then add the values to correct attribute-key
         // TODO: Fetch key-values from api instead of hardcoding them :D
-        $data->values = [
-            '2a83c84a-6e86-49c8-ae63-bf8c68878fac' => [
-                $data->location],
-            'dcdf4bc5-bfc0-432e-8525-750d6416fd8e'=>[$mediaId]
-        ];
-        $data->sources = 'Facebook';
+        $data->values = [];
+        if(!empty($data->location)) {
+           $data->values['2a83c84a-6e86-49c8-ae63-bf8c68878fac'] = [
+                $data->location];
+        }
+        if(isset($mediaId)){
+            $data->values['dcdf4bc5-bfc0-432e-8525-750d6416fd8e']=[$mediaId];
+        }
+        $data->source = 'facebook';
         $data->form = ['id' => 26];
-
         // finally, save the post to the platform-api
         $header = ['Content-Type' => 'text/json'];
         try {
@@ -77,9 +85,10 @@ class PlatformApiService
                 'headers' => $header,
                 'json' => $data
                 ]);
+        return 'thank_you';
         } 
         catch (ClientException $e) {
-            // TODO: Send reply back to fb
+            // TODO: Send reply about failing back to fb
             \Log::info(print_r($e->getMessage(), true));
         }
     }
@@ -100,5 +109,4 @@ class PlatformApiService
         }
         return $attributes;
     }
-
 }

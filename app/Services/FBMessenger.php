@@ -40,7 +40,7 @@ class FBMessenger
     **/
     public function startConversation(Request $request) 
     {
-        // Move below to own function?
+        $location = null;
         // When the user send a written-message
         if($request->input(self::MESSAGE)) {
             $message = $request->input(self::MESSAGE);
@@ -56,7 +56,6 @@ class FBMessenger
         // When the user shares location
         else if($request->input(self::LOCATION)) {
             $message = 'location';
-            // TODO: Do something with the location
             $location = $request->input(self::LOCATION);
         }
         // When the user makes a response we have not configured
@@ -88,15 +87,18 @@ class FBMessenger
                 $this->sendMessage($answer, $recipient);    
             } else if($ongoingReport) {
                 // starts the reporting-flow
-                $this->startReporting($ongoingReport, $message, $recipient);
+                $this->startReporting($ongoingReport, $message, $recipient, $location);
             } else {
                 // if the user writes something that does not makes sense
-                $ongoingReport->delete();
+                if($ongoingReport) {
+                    $ongoingReport->delete();
+                }
                 $answer = Answer::where('command', '=', 'not readable')->first();
                 $this->sendMessage(json_decode($answer->answer), $recipient);
             }
-            return response('Accepted', 200);
         }
+        return response('Accepted', 200);
+
     }
 
     /**
@@ -122,9 +124,9 @@ class FBMessenger
     }
             
     /* Start collecting reports */
-    private function startReporting($ongoingReport, $message, $recipient)
+    private function startReporting($ongoingReport, $message, $recipient, $location)
     {
-       // todo: figure out something more clean for below code and fetch attributes from platform-api instead of hardcoding them...
+       // todo: figure out something more clean for below code and fetch attributes from platform-api instead of hardcoding them... 
         switch ($ongoingReport->last_question) {
             case 'title':
                 $ongoingReport->replies = json_encode([
@@ -136,7 +138,7 @@ class FBMessenger
                 break;
             case 'description':
                 $replies = json_decode($ongoingReport->replies);
-                $replies->description = $message;
+                $replies->content = $message;
                 $ongoingReport->replies = json_encode($replies);
                 $command = 'image';
                 $ongoingReport->last_question = $command;
@@ -147,30 +149,36 @@ class FBMessenger
                 $replies = json_decode($ongoingReport->replies);
                 $replies->image = $message;
                 $ongoingReport->replies = json_encode($replies);
-                $command = 'location';
-                $ongoingReport->last_question = $command;
+                $command = 'find_location';
+                $ongoingReport->last_question = 'location';
                 $ongoingReport->save();
                 break;
             case 'location':
-                // ask if they want to share location, and on messenger, else set location=== null
+                if(isset($location)) {
+                //extracting lat/long if user shared location
                 $replies = json_decode($ongoingReport->replies);
-                $replies->location = $message;
+                $replies->location = [
+                    'lat'=>$location['lat'],
+                    'lon'=>$location['long']
+                    ];
                 $ongoingReport->replies = json_encode($replies);
+                }
                 $command = 'finished';
                 $ongoingReport->last_question = $command;
                 $ongoingReport->save();
                 break;
             case 'finished':
-                // if the user clicks exit, bot will delete the ongoing report and start conversation-loop from the beginning again
-                if($message === 'send') {
-                    $command = $this->platform->sendPost();
+            // if the user clicks exit, bot will delete the ongoing report and start conversation-loop from the beginning again
+                 if($message === 'send') {
+                      $command = $this->platform->savePost($ongoingReport->replies);
                 } else {
-                    $command = 'sorry';
+                    $command = 'not readable';
                 }
                 break;
             default:
             // if the user do something that the bot does not understand
-            $command = 'sorry';
+            $command = 'not readable';
+            break;
         }
         // getting the answer from db based on value of $command
         $answer = Answer::where('command', '=', $command)->first();

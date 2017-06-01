@@ -33,7 +33,8 @@ class AnswersTableSeeder extends Seeder
         $data = [
             ['command' => 'first hand shake', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Hi and welcome! What do you want to do?', 'buttons' => $startButtons, ]]])],
             ['command' => 'exit', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'What do you want to do next?', 'buttons' => $startButtons, ]]])],
-            ['command' => 'make report', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Next we will ask you to fill in a series of fields one-at-a-time and then once your answers are completed the post will be sent to the Uchaguzi deployment. Ready to start?', 'buttons' => [
+            ['command' => 'make report', 'answer' => 
+            json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Next we will ask you to fill in a series of fields one-at-a-time and then once your answers are completed the post will be sent to the Uchaguzi deployment. Ready to start?', 'buttons' => [
                 ['type' => 'postback', 'title' => 'Yes', 'payload' => 'start'],
                 ['type' => 'postback', 'title' => 'No', 'payload' => 'exit']
             ]]]])],
@@ -41,11 +42,15 @@ class AnswersTableSeeder extends Seeder
             ['command' => 'not readable', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Sorry, I did not understand that, please choose of the following:', 'buttons' => $startButtons, ]]])],
             ['command' => 'description', 'answer' => json_encode(['text' => 'What do you want to report? Please add a description:'])],
             ['command' => 'image', 'answer' => json_encode(['text' => 'Please add an image to your report:'])],
-            ['command' => 'location', 'answer' => json_encode(['text' => 'Please add your location', 'quick_replies' => [
-                ['content_type' => 'location']
+            ['command' => 'find_location', 'answer' => json_encode(['text' => 'Please add your location', 'quick_replies' => [
+                ['content_type' => 'location'],
+                ['content_type' => 'text', 'title' => 'No, I do not want to share my location', 'payload' =>'noLocation']
             ]])],
-            ['command' => 'finished', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Thank you! Do you want to send your report?:', 'buttons' => ['type' => 'postback', 'title' => 'Yes, please send', 'payload' => 'send'],
+            ['command' => 'finished', 'answer' => 
+            json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Thank you! Do you want to send your report?:', 'buttons' => [['type' => 'postback', 'title' => 'Yes, please send', 'payload' => 'send'],
                 ['type' => 'postback', 'title' => 'No, delete and go back to start', 'payload' => 'exit']
+            ]]]])],
+            ['command' => 'thank_you', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Thank you, your post have been saved. What do you want to do next?', 'buttons' => $startButtons
             ]]])]
         ];
 

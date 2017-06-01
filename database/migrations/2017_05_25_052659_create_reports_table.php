@@ -16,8 +16,8 @@ class CreateReportsTable extends Migration
         Schema::create('reports', function(Blueprint $table) {
             $table->increments('id');
             $table->string('user_id');
-            $table->string('attributes')->nullable()->default(null);
-            $table->string('replies')->nullable()->default(null);
+            $table->longText('attributes')->nullable()->default(null);
+            $table->longText('replies')->nullable()->default(null);
             $table->string('last_question')->nullable()->default(null);
         });
     }
