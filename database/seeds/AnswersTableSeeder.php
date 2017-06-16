@@ -12,46 +12,54 @@ class AnswersTableSeeder extends Seeder
      */
     public function run()
     {
-        $startButtons = [
-            [
-                'type' => 'web_url',
-                'url' => 'https://www.facebook.com/Uchaguzi',
-                'title' => 'Uchaguzi-facebook'
-            ],
-            [
-                'type' => 'web_url',
-                'url' => 'https://www.ushahidi.com/ushaguzi',
-                'title' => 'Uchaguzi web'
-            ],
-            [
-                'type' => 'postback',
-                'title' => 'Post a report here',
-                'payload' => 'make report'
-            ]
-        ];
-
         $data = [
-            ['command' => 'first hand shake', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Hi and welcome! What do you want to do?', 'buttons' => $startButtons, ]]])],
-            ['command' => 'exit', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'What do you want to do next?', 'buttons' => $startButtons, ]]])],
-            ['command' => 'make report', 'answer' => 
-            json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Next we will ask you to fill in a series of fields one-at-a-time and then once your answers are completed the post will be sent to the Uchaguzi deployment. Ready to start?', 'buttons' => [
-                ['type' => 'postback', 'title' => 'Yes', 'payload' => 'start'],
-                ['type' => 'postback', 'title' => 'No', 'payload' => 'exit']
-            ]]]])],
-            ['command' => 'start', 'answer' => json_encode(['text' => 'Please give me a title for your report:'])],
-            ['command' => 'not readable', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Sorry, I did not understand that, please choose of the following:', 'buttons' => $startButtons, ]]])],
-            ['command' => 'description', 'answer' => json_encode(['text' => 'What do you want to report? Please add a description:'])],
-            ['command' => 'image', 'answer' => json_encode(['text' => 'Please add an image to your report:'])],
-            ['command' => 'find_location', 'answer' => json_encode(['text' => 'Please add your location', 'quick_replies' => [
-                ['content_type' => 'location'],
-                ['content_type' => 'text', 'title' => 'No, I do not want to share my location', 'payload' =>'noLocation']
-            ]])],
-            ['command' => 'finished', 'answer' => 
-            json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Thank you! Do you want to send your report?:', 'buttons' => [['type' => 'postback', 'title' => 'Yes, please send', 'payload' => 'send'],
-                ['type' => 'postback', 'title' => 'No, delete and go back to start', 'payload' => 'exit']
-            ]]]])],
-            ['command' => 'thank_you', 'answer' => json_encode(['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Thank you, your post have been saved. What do you want to do next?', 'buttons' => $startButtons
-            ]]])]
+            ['command' => 'first hand shake', 'language' => 'en',
+                'answers' => serialize([['text' => "Hello! Welcome to Uchaguzi Citizen Reporter."], ['text' => "Uchaguzi's aim is to help Kenya have a free, fair, peaceful, and credible general election."], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Keep an eye on the vote and submit any reports of issues that impact the election', 'buttons' => [['type' => 'postback', 'title' => 'Send a report', 'payload' => 'make report']]]]]])
+            ],
+            ['command' => 'what is', 'language' => 'en',
+                'answers' => serialize([['text' => "Uchaguzi is a partnership committed to increased transparency and accountability in Kenya's General Election through active citizen participation."], ['text' => ' Linda Kura Yako!'], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Ready to send a new report?', 'buttons' => [['type' => 'postback', 'title' => 'Send a report', 'payload' => 'make report']]]]]])],
+            ['command' => 'how information', 'language' => 'en',
+                'answers' => serialize([['text' => "All reports are reviewed for accuracy and action. Teams of trained volunteers will work with our partners to verify and amplify reports. Our criteria is to give an accurate and citizen-driven picture of what is happening during the Kenyan Elections."], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Ready to send a new report?', 'buttons' => [['type' => 'postback', 'title' => 'Send a report', 'payload' => 'make report']]]]]])
+            ],
+            ['command' => 'how report', 'language' => 'en',
+                'answers' => serialize([['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'You can send reports to Uchaguzi a few ways:', 'buttons' => [['type' => 'postback', 'title' => 'Text message(SMS)', 'payload' => 'sms'], ['type' => 'postback', 'title' => 'Twitter', 'payload' => 'twitter'], ['type' => 'postback', 'title' => 'Email', 'payload' => 'email']]]]], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'You can also send a report in Facebook Messenger. Want to get started?', 'buttons' => [['type' => 'postback', 'title' => 'Send a report', 'payload' => 'make report']]]]]])
+            ],
+            ['command' => 'sms', 'language' => 'en',
+                'answers' =>serialize([['text' => 'Send a text message (SMS) on 20166 (short code) from within Kenya'], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Ready to send a new report?', 'buttons' => [['type' => 'postback', 'title' => 'Send a report', 'payload' => 'make report']]]]]])],
+            ['command' => 'twitter', 'language' => 'en',
+                'answers' =>serialize([['text' => 'Twitter: follow @uchaguzi and use #uchaguzi hash tag'], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Ready to send a new report?', 'buttons' => [['type' => 'postback', 'title' => 'Send a report', 'payload' => 'make report']]]]]])],
+            ['command' => 'email', 'language' => 'en',
+                'answers' =>serialize([['text' => 'Email reports.uchaguzi@gmail.com'], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Ready to send a new report?', 'buttons' => [['type' => 'postback', 'title' => 'Send a report', 'payload' => 'make report']]]]]])],
+            ['command' => 'make report', 'language' => 'en',
+                'answers' =>serialize([['text' => 'In a few words, describe what you would like to report.']])], 
+            ['command' => 'image location', 'language' => 'en',
+                'answers' => serialize([['attachment' => ['type' => 'template', 'payload' =>['template_type' => 'button', 'text' => 'Anything else? If not, do you want to add a location or image to your report?', 'buttons' => [['type' => 'postback', 'title' => 'Send my report', 'payload' => 'send'], ['type' => 'postback', 'title' => 'Add an image', 'payload' => 'add image'], ['type' => 'postback', 'title' => 'Add a location', 'payload' => 'add location']]]]]])],
+            ['command' => 'not readable', 'language' => 'en',
+                'answers' =>serialize([['text' =>"I am sorry, I didn't understand that"], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'What do you want to do next?', 'buttons' => [['type' => 'postback', 'title' => 'Send another report', 'payload' => 'make report'], ['type' => 'web_url', 'title' => 'Go to Uchaguzi', 'url' => 'https://uchaguzi.or.ke/']]]]]])],
+            ['command' => 'add image', 'language' => 'en',
+                'answers' =>serialize([['text' => "Ok great! Just add a photo here like a normal chat, and I'll attach it to your report"]])
+            ],
+            ['command' => 'add location', 'language' => 'en',
+                'answers' => serialize([['text' => 'Please add your location below', 'quick_replies' => [['content_type' => 'location'], ['content_type' => 'text', 'title' => 'Send my report', 'payload' => 'send']]]])
+            ],
+            ['command' => 'image received', 'language' => 'en',
+                'answers' =>serialize([['text' => 'Ok, got it. Do you want to add a location to your report?', 'quick_replies' => [['content_type' => 'location'], ['content_type' => 'text', 'title' => 'Send my report', 'payload' => 'send']]]])
+            ],
+            ['command' => 'location received', 'language' => 'en',
+                'answers' =>serialize([['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Ok, got it. Do you want to add an image to your report?', 'buttons' => [['type' => 'postback', 'title' => 'Send my report', 'payload' => 'send'], ['type' => 'postback', 'title' => 'Add an image', 'payload' => 'add image']]]]]])
+            ],
+            ['command' => 'submit', 'language' => 'en',
+                'answers' =>serialize([['text' => 'Your report has been sent. Nice work!'], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'What do you want to do next?', 'buttons' => [
+                    ['type' => 'postback', 'title' => 'Send another report', 'payload' => 'make report'], ['type' => 'web_url', 'title' => 'View all Uchaguzi reports', 'url' => 'https://uchaguzi.or.ke/']]]]]])
+            ],
+            ['command' => 'send report', 'language' => 'en',
+                'answers' =>serialize([['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Perfect! Do you want to send your report to us?', 'buttons' => [['type' => 'postback', 'title' => 'Send my report', 'payload' => 'send'], ['type' => 'postback', 'title' => 'I want to restart', 'payload' => 'make report']]]]]])
+            ],
+            ['command' => 'continue', 'language' => 'en',
+                'answers' =>serialize([['text' => 'In a few words, describe what you would like to report.']])],
+            ['command' => 'platform error', 'language' => 'en',
+                'answers' => serialize([['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Hmm, we encountered a problem when sending your report, do you want to try again?', 'buttons' => [['type' => 'postback', 'title' => 'Send my report', 'payload' => 'send'], ['type' => 'postback', 'title' => 'I want to restart', 'payload' => 'make report']]]]]])
+            ]
         ];
 
         DB::table('answers')->delete();
@@ -59,4 +67,3 @@ class AnswersTableSeeder extends Seeder
 
         }
     }
-

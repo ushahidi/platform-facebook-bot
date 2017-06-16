@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(FBMessenger::class, function($app) {
-            return new FBMessenger(config('options.facebook'));
+            return new FBMessenger(config('options'));
         });
         $this->app->singleton(PlatformApiService::class, function($app) {
             return new PlatformApiService(config('options.ushahidi'));

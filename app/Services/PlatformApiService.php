@@ -2,8 +2,6 @@
 namespace App\Services;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ClientException;
 use Sainsburys\Guzzle\Oauth2\GrantType\RefreshToken;
 use Sainsburys\Guzzle\Oauth2\GrantType\PasswordCredentials;
@@ -21,7 +19,7 @@ class PlatformApiService
     {
         $this->base_uri = $this->config['platform_base_uri'];
         $handlerStack = HandlerStack::create();
-        $client = new Client(['handler'=> $handlerStack, 'base_uri' => $this->base_uri, 'auth' => 'oauth2']);
+        $client = new Client(['handler' => $handlerStack, 'base_uri' => $this->base_uri, 'auth' => 'oauth2']);
         $credentials = [
             PasswordCredentials::CONFIG_USERNAME => $this->config['platform_username'],
             PasswordCredentials::CONFIG_PASSWORD => $this->config['platform_password'],
@@ -39,45 +37,42 @@ class PlatformApiService
     }
 
     /* saves the post to the platform */
-    public function savePost($post)
+    public function savePost($ongoingReport)
     {
         $platformClient = $this->getClient();
         $client = new Client();
-        $data = json_decode($post);
+        $data = json_decode($ongoingReport->replies);
         //first save the image
         try {
             // getting the image
-            $image_response = $client->request('GET', $data->image);
-            $image = $image_response->getBody()->getContents();
-            // saving it to platform
-            $media = $platformClient->request('POST','api/v3/media', [
-                'multipart'=> [['name' => 'file', 'contents'=> $image, 'filename'=> 'sample.png']]
-            ]);
-            // getting image-id
-            $mediaId = json_decode($media->getBody()->getContents())->id;
+            if(isset($data->image)) {
+                    $image_response = $client->request('GET', $data->image);   
+                    $image = $image_response->getBody()->getContents();
+                // saving it to platform
+                $media = $platformClient->request('POST','api/v3/media', [
+                    'multipart'=> [['name' => 'file', 'contents'=> $image, 'filename'=> 'sample.png']]
+                ]);
+                // getting image-id
+                $mediaId = json_decode($media->getBody()->getContents())->id;
+            }
+        } catch (ClientException $e) {
+            \Log::ERROR('error when uploading file: ' . $e->getMessage());
         }
-        catch (ClientException $e) {
-            // TODO: Send reply back to fb
-            \Log::info('error when uploading file');
-        } catch (Exception $e) {
-            \Log::info(print_r('error', true));
-            \Log::info(print_r($e, true));
-        } catch(RequestException $e) {
-            \Log::info(print_r('error request', true));
-            \Log::info(print_r($e, true));
-        }
-        // then add the values to correct attribute-key
-        // TODO: Fetch key-values from api instead of hardcoding them :D
+
+        // assigning values to attribute-keys
         $data->values = [];
-        if(!empty($data->location)) {
-           $data->values['2a83c84a-6e86-49c8-ae63-bf8c68878fac'] = [
-                $data->location];
+        $attributes = $ongoingReport->attributes;
+        foreach(json_decode($attributes) as $attribute) {
+            if($attribute->label === 'Location' && !empty($data->location)) {
+                $data->values[$attribute->key] = [$data->location];
+            } else if($attribute->label === 'Image' && isset($mediaId)) {
+                $data->values[$attribute->key]=[$mediaId];    
+            }
         }
-        if(isset($mediaId)){
-            $data->values['dcdf4bc5-bfc0-432e-8525-750d6416fd8e']=[$mediaId];
-        }
-        $data->source = 'facebook';
-        $data->form = ['id' => 26];
+
+        $data->title = substr($data->content, 0, 15) . '...';
+        $data->form = ['id' => $this->config['platform_form_id']];
+        
         // finally, save the post to the platform-api
         $header = ['Content-Type' => 'text/json'];
         try {
@@ -85,28 +80,39 @@ class PlatformApiService
                 'headers' => $header,
                 'json' => $data
                 ]);
-        return 'thank_you';
-        } 
-        catch (ClientException $e) {
-            // TODO: Send reply about failing back to fb
-            \Log::info(print_r($e->getMessage(), true));
+            // sucessful submission of post    
+            $command = 'submit';
+        } catch (ClientException $e) {
+            // unsuccessful submission of post
+            $command = 'platform error';
+            \Log::ERROR('could not send message to platform: ' . $e->getMessage());
         }
+        // returning command to be used to find answer in database
+        return $command;
     }
 
-      /*fetches attributes from platform-api*/
-    private function getAttributes()
+    /*fetches attributes from platform-api*/
+    public function getAttributes()
     {
+        /* Remember: If refactoring and giving the user the option to choose which form is used, we need to send form-id as arg instead of using config */
+
+        $formId = $this->config['platform_form_id'];
         $client = $this->getClient();
-        $response = $client->get('/api/v3/forms/26/attributes');
-        $contents = $response->getBody();
-        $contents = json_decode($contents);
-        $attributes = [];
-        foreach ($contents->results as $content) {
-            $attribute = [];
-            $attribute[$content->label] = $content->label;
-            $attribute['key'] = $content->key;
-            array_push($attributes, $attribute);
-        }
+        try {
+            $response = $client->get('/api/v3/forms/' . $formId .'/attributes');
+            $contents = $response->getBody();
+            $contents = json_decode($contents);
+            $attributes = [];
+            foreach ($contents->results as $content) {
+                $attribute = [];
+                $attribute['label'] = $content->label;
+                $attribute['key'] = $content->key;
+                array_push($attributes, $attribute);
+            }
+        } catch (ClientException $e) {
+            $attributes = [];
+            \Log::ERROR('error when fetching attributes:' . $e->getMessage());
+        } 
         return $attributes;
     }
 }
