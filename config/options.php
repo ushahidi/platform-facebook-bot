@@ -6,7 +6,8 @@
             'platform_client_id' => env('PLATFORM_CLIENT_ID'),
             'platform_token_url' => env('PLATFORM_TOKEN_URL'),
             'platform_client_secret' => env('PLATFORM_CLIENT_SECRET'),
-            'platform_base_uri' => env('PLATFORM_BASE_URI')
+            'platform_base_uri' => env('PLATFORM_BASE_URI'),
+            'platform_form_id' => env('PLATFORM_FORM_ID')
         ],
         'facebook' => [
             'facebook_access_token' => env('FACEBOOK_ACCESS_TOKEN'),
