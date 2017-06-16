@@ -9,5 +9,5 @@ class Answer extends Model
     protected $table = 'answers';
     public $timestamps = false;
 
-    protected $fillable = ['command', 'answer'];
+    protected $fillable = ['command', 'language', 'answer'];
 }
