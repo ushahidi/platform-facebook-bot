@@ -18,9 +18,6 @@ sites:
     -
         map: facebook-bot.app
         to: /home/vagrant/Code/facebook-bot/public
-    -
-        map:  f5d92e79.ngrok.io
-        to: /home/vagrant/Code/facebook-bot/public
 databases:
     - homestead
 name: facebook-bot
