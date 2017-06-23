@@ -50,7 +50,7 @@ class AnswersTableSeeder extends Seeder
             ],
             ['command' => 'submit', 'language' => 'en',
                 'answers' =>serialize([['text' => 'Your report has been sent. Nice work!'], ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'What do you want to do next?', 'buttons' => [
-                    ['type' => 'postback', 'title' => 'Send another report', 'payload' => 'make report'], ['type' => 'web_url', 'title' => 'View all Uchaguzi reports', 'url' => 'https://uchaguzi.or.ke/']]]]]])
+                    ['type' => 'postback', 'title' => 'Send another report', 'payload' => 'make report'], ['type' => 'web_url', 'title' => 'Go to Uchaguzi', 'url' => 'https://uchaguzi.or.ke/']]]]]])
             ],
             ['command' => 'send report', 'language' => 'en',
                 'answers' =>serialize([['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'button', 'text' => 'Perfect! Do you want to send your report to us?', 'buttons' => [['type' => 'postback', 'title' => 'Send my report', 'payload' => 'send'], ['type' => 'postback', 'title' => 'I want to restart', 'payload' => 'make report']]]]]])
