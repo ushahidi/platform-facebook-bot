@@ -129,7 +129,8 @@ class FBMessenger
                 if($ongoingReport) {
                     $ongoingReport->delete();
                 }
-                $answers = Answer::where('command', '=', 'not readable')->first();
+                // getting a random error-message from database
+                $answers = Answer::where('command', '=', 'not readable')->get()->random();
                 // sends replies
                 $this->sendMessage(unserialize($answers->answers), $recipient);
         }
