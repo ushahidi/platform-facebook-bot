@@ -78,8 +78,7 @@ class FBMessenger
             $message = 'not readable';
         }
        
-        /* starting the conversation */
-
+        /* starting the conversation */                
         if($recipient !== $messageId) {
             if($message_type === 'location received') {
                 $command = $message_type;
@@ -89,7 +88,7 @@ class FBMessenger
 
             // getting the bot-answer from database 
             $answers = Answer::where('command', '=', $command)->first();
-        
+
             if(!empty($answers) && $message_type !== 'location received') {
                 // send a reply to the user
                 $this->sendMessage(unserialize($answers->answers), $recipient);
@@ -110,6 +109,9 @@ class FBMessenger
             } else if($message_type === 'url') {
                 // whenever the user sends an image outside the reportingflow
                 $this->initialiseReport($recipient, $message);
+                $answers = Answer::where('command', '=', 'make report')->first();
+                $this->sendMessage(unserialize($answers->answers), $recipient);
+
             } else {
                 // if the user writes something that does not makes sense
                 if($ongoingReport) {
