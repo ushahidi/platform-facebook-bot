@@ -64,14 +64,14 @@ class PlatformApiService
         $attributes = $ongoingReport->attributes;
         foreach(json_decode($attributes) as $attribute) {
 
-            if($attribute->label === 'Location') {
+            if($attribute->label === 'location') {
                 if(!empty($data->location) && !empty($data->location->lat) && !empty($data->location->lon)) {
                     $data->values[$attribute->key] = [$data->location];    
                 } else {
                     // adding default location if no or faulty location is sent
                     $data->values[$attribute->key] = [['lon' => 36.817245, 'lat' => -1.283253]];
                 }
-            } else if($attribute->label === 'Image' && isset($mediaId)) {
+            } else if($attribute->label === 'image' && isset($mediaId)) {
                 $data->values[$attribute->key]=[$mediaId];
             } else if(!empty($attribute->default)) {
                 $data->values[$attribute->key] = [$attribute->default];
@@ -149,11 +149,14 @@ class PlatformApiService
             $contents = json_decode($contents);
             $forms = [];
             foreach ($contents->results as $content) {
-                $form = [];
-                $form['id'] = $content->id;
-                $form['name'] = $content->name;
-                $form['description'] = $content->description;
-                array_push($forms, $form);
+                // if-statement is a temporary hack for Uchaguzi
+                if($content->id < 10) {
+                    $form = [];
+                    $form['id'] = $content->id;
+                    $form['name'] = $content->name;
+                    $form['description'] = $content->description;
+                    array_push($forms, $form);
+                }
             }
         } catch (ClientException $e) {
             $forms = [];

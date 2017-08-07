@@ -140,6 +140,10 @@ class FBMessenger
 
     private function formatForms () {
         $forms = $this->platform->getForms();
+        if(count($forms) === 0) {
+            sleep(10);
+            $forms = $this->platform->getForms();
+        }
         $replies = [['text' => 'What kind of issue would you like to report?']];
         $elements = [];
         $reply = [
