@@ -63,14 +63,16 @@ class PlatformApiService
         $data->values = [];
         $attributes = $ongoingReport->attributes;
         foreach(json_decode($attributes) as $attribute) {
-            if($attribute->label === 'location') {
-                if(!empty($data->location)) {
-                    $data->values[$attribute->key] = [$data->location];
-                } else { 
-                    $data->values[$attribute->key] = [['lat'=>'-1.2832533','lon'=>'36.8172449']];
-                }    
-            } else if($attribute->label === 'image' && isset($mediaId)) {
-                $data->values[$attribute->key]=[$mediaId];    
+
+            if($attribute->label === 'Location') {
+                if(!empty($data->location) && !empty($data->location->lat) && !empty($data->location->lon)) {
+                    $data->values[$attribute->key] = [$data->location];    
+                } else {
+                    // adding default location if no or faulty location is sent
+                    $data->values[$attribute->key] = [['lon' => 36.817245, 'lat' => -1.283253]];
+                }
+            } else if($attribute->label === 'Image' && isset($mediaId)) {
+                $data->values[$attribute->key]=[$mediaId];
             } else if(!empty($attribute->default)) {
                 $data->values[$attribute->key] = [$attribute->default];
             }

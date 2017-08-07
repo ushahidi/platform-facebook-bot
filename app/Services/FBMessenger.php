@@ -77,9 +77,9 @@ class FBMessenger
         else {
             $message_type = 'text';
             $message = 'not readable';
-        }       
-        /* starting the conversation */
+        }
 
+        /* starting the conversation */                
         if($recipient !== $messageId) {
             if($message_type === 'location received') {
                 $command = $message_type;
@@ -89,6 +89,7 @@ class FBMessenger
 
             // getting the bot-answer from database 
             $answers = Answer::where('command', '=', $command)->first();
+
             if(!empty($answers) && $message_type !== 'location received') {
                 $reply = unserialize($answers->answers);
                 // delete $ongoingReport if user do something that is not connected to the reporting-flow
@@ -121,6 +122,7 @@ class FBMessenger
                 $this->reportingFlow($ongoingReport, $message, $recipient, $message_type);
             } else if($message_type === 'url') {
                 // whenever the user sends an image outside the reportingflow
+
                 $this->initialiseReport($recipient, null, $message);
                 $reply = $this->formatForms();
                 $this->sendMessage($reply, $recipient);
