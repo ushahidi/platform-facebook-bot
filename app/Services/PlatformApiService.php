@@ -63,24 +63,27 @@ class PlatformApiService
         $data->values = [];
         $attributes = $ongoingReport->attributes;
         foreach(json_decode($attributes) as $attribute) {
-            if($attribute->label === 'Location') {
+
+            if($attribute->label === 'location') {
                 if(!empty($data->location) && !empty($data->location->lat) && !empty($data->location->lon)) {
                     $data->values[$attribute->key] = [$data->location];    
                 } else {
                     // adding default location if no or faulty location is sent
                     $data->values[$attribute->key] = [['lon' => 36.817245, 'lat' => -1.283253]];
                 }
-            } else if($attribute->label === 'Image' && isset($mediaId)) {
-                $data->values[$attribute->key]=[$mediaId];    
+            } else if($attribute->label === 'image' && isset($mediaId)) {
+                $data->values[$attribute->key]=[$mediaId];
+            } else if(!empty($attribute->default)) {
+                $data->values[$attribute->key] = [$attribute->default];
             }
         }
 
         $data->title = substr($data->content, 0, 15) . '...';
-        $data->form = ['id' => $this->config['platform_form_id']];
-        
+        $data->form = ['id' => $ongoingReport->form_id];
         // finally, save the post to the platform-api
         $header = ['Content-Type' => 'text/json'];
         try {
+        
             $response = $platformClient->request('POST', '/api/v3/posts', [
                 'headers' => $header,
                 'json' => $data
@@ -97,11 +100,8 @@ class PlatformApiService
     }
 
     /*fetches attributes from platform-api*/
-    public function getAttributes()
+    public function getAttributes($formId)
     {
-        /* Remember: If refactoring and giving the user the option to choose which form is used, we need to send form-id as arg instead of using config */
-
-        $formId = $this->config['platform_form_id'];
         $client = $this->getClient();
         try {
             $response = $client->get('/api/v3/forms/' . $formId .'/attributes');
@@ -109,15 +109,59 @@ class PlatformApiService
             $contents = json_decode($contents);
             $attributes = [];
             foreach ($contents->results as $content) {
+                
+                // here, add default values.
                 $attribute = [];
-                $attribute['label'] = $content->label;
-                $attribute['key'] = $content->key;
-                array_push($attributes, $attribute);
+                
+                if($content->type === 'media') {
+                    $attribute['label'] = 'image';
+                    $attribute['key'] = $content->key;
+                    
+                } else if($content->type === 'point') {
+                    $attribute['label'] = 'location';
+                    $attribute['key'] = $content->key;
+                    $attribute['default'] = $content->default;
+                } else if($content->type === 'title' || $content->type === 'description') {
+                    $attribute['label'] = $content->label;
+                    $attribute['key'] = $content->key;
+                } else if($content->default) {
+                    $attribute['label'] = $content->label;
+                    $attribute['key'] = $content->key;
+                }
+                
+                if(count($attribute) > 0) {
+                    $attribute['default'] = $content->default;
+                    array_push($attributes, $attribute);
+                }
             }
         } catch (ClientException $e) {
             $attributes = [];
             \Log::ERROR('error when fetching attributes:' . $e->getMessage());
         } 
         return $attributes;
+    }
+
+    public function getForms() {
+        $client = $this->getClient();
+        try {
+            $response = $client->get('/api/v3/forms');
+            $contents = $response->getBody();
+            $contents = json_decode($contents);
+            $forms = [];
+            foreach ($contents->results as $content) {
+                // if-statement is a temporary hack for Uchaguzi
+                if($content->id < 10) {
+                    $form = [];
+                    $form['id'] = $content->id;
+                    $form['name'] = $content->name;
+                    $form['description'] = $content->description;
+                    array_push($forms, $form);
+                }
+            }
+        } catch (ClientException $e) {
+            $forms = [];
+            \Log::ERROR('error when fetching forms' . $e->getMessage());
+        }
+        return $forms;
     }
 }

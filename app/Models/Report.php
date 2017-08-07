@@ -10,6 +10,7 @@
         
         protected $fillable = [
         'user_id',
+        'form_id',
         'attributes',
         'replies',
         'last_question'

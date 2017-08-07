@@ -41,6 +41,7 @@ class FBMessenger
     **/
     public function startConversation(Request $request) 
     {
+
         // the user_id we will reply to
         $recipient = $request->input(self::SENDER_ID);
 
@@ -77,7 +78,7 @@ class FBMessenger
             $message_type = 'text';
             $message = 'not readable';
         }
-       
+
         /* starting the conversation */                
         if($recipient !== $messageId) {
             if($message_type === 'location received') {
@@ -90,9 +91,7 @@ class FBMessenger
             $answers = Answer::where('command', '=', $command)->first();
 
             if(!empty($answers) && $message_type !== 'location received') {
-                // send a reply to the user
-                $this->sendMessage(unserialize($answers->answers), $recipient);
-            
+                $reply = unserialize($answers->answers);
                 // delete $ongoingReport if user do something that is not connected to the reporting-flow
                 if(!$answers->reporting_flow) {
                     if($ongoingReport) {
@@ -101,17 +100,32 @@ class FBMessenger
                 }
                 // initialise report if user wants to start reporting
                 if($command === 'make report') {
-                    $this->initialiseReport($recipient);
+                    $reply = $this->formatForms();
                 }
+                // send a reply to the user
+                $this->sendMessage($reply, $recipient);
+            } else if($message_type === 'payload' && is_numeric($message)) {
+                    // saving the formId the user choose to report to
+                    $formId = $message;
+                    if(!$ongoingReport) {
+                        $this->initialiseReport($recipient, $formId);
+                    } else {
+                        $attributes = $this->platform->getAttributes($formId);
+                        $ongoingReport->form_id = $formId;
+                        $ongoingReport->attributes = json_encode($attributes);
+                        $ongoingReport->save();
+                    }
+                    $answers = Answer::where('command', '=', 'make report')->first();
+                    $this->sendMessage(unserialize($answers->answers), $recipient);
             } else if($ongoingReport) {
                 // go to the reporting flow if there is an ongoing report
                 $this->reportingFlow($ongoingReport, $message, $recipient, $message_type);
             } else if($message_type === 'url') {
                 // whenever the user sends an image outside the reportingflow
-                $this->initialiseReport($recipient, $message);
-                $answers = Answer::where('command', '=', 'make report')->first();
-                $this->sendMessage(unserialize($answers->answers), $recipient);
 
+                $this->initialiseReport($recipient, null, $message);
+                $reply = $this->formatForms();
+                $this->sendMessage($reply, $recipient);
             } else {
                 // if the user writes something that does not makes sense
                 if($ongoingReport) {
@@ -123,14 +137,61 @@ class FBMessenger
         }
         return response('Accepted', 200);
     }
+
+    private function formatForms () {
+        $forms = $this->platform->getForms();
+        if(count($forms) === 0) {
+            sleep(10);
+            $forms = $this->platform->getForms();
+        }
+        $replies = [['text' => 'What kind of issue would you like to report?']];
+        $elements = [];
+        $reply = [
+            'attachment'=> [
+                'type'=> 'template',
+                'payload'=> [
+                    'template_type'=> 'list',
+                    'top_element_style' => 'compact'
+                ]
+            ]
+        ];
+        foreach ($forms as $key => $form) {
+                if(strlen($form['description']) > 0 ) {
+                    $description = $form['description'];
+                } else {
+                    $description = '-';
+                }
+                $element = [
+                    'title' => $form['name'],
+                    'subtitle' => $description,
+                    'buttons' => [[
+                            'title' => 'Choose',
+                            'type' => 'postback',
+                            'payload' => $form['id']
+                        ]]
+                ];
+                array_push($elements, $element);
+
+                if(($key+1) % 4 == 0 || $key+1 == count($forms)) {
+                    $reply['attachment']['payload']['elements'] = $elements;
+                    array_push($replies, $reply);
+                    $elements = [];
+                }
+            }
+            return $replies;
+    }
     /**
     * Fetch attributes from platform and initialise a report in report-database 
     * $param string $recipient This is the facebook user-id
     * $param string $image Image-url sent by user
     */
-    private function initialiseReport($recipient, $image = null) {
-        $attributes = $this->platform->getAttributes();
-        Report::create(['user_id' => $recipient, 'attributes'=> json_encode($attributes), 'replies'=> json_encode(['content' => ' ', 'image'=> $image]), 'last_question' => 'make report']);
+    private function initialiseReport($recipient, $formId, $image = null) {
+        if($formId) {
+            $attributes = $this->platform->getAttributes($formId);
+        } else {
+            $attributes = null;
+        }
+        Report::create(['user_id' => $recipient, 'form_id' => intval($formId), 'attributes'=> json_encode($attributes), 'replies'=> json_encode(['content' => ' ', 'image'=> $image]), 'last_question' => 'make report']);
     }
 
     /**
