@@ -139,124 +139,46 @@ class FBMessenger
     }
 
     private function formatForms () {
-    // below is a temporary fix to avoid pressure and waiting-time from uchaguzi-api...
-       return [['text' => 'What kind of issue would you like to report?'],['attachment'=> [
+      $forms = $this->platform->getForms();
+        if(count($forms) === 0) {
+            sleep(10);
+            $forms = $this->platform->getForms();
+        }
+        $replies = [['text' => 'What kind of issue would you like to report?']];
+        $elements = [];
+        $reply = [
+            'attachment'=> [
                 'type'=> 'template',
                 'payload'=> [
                     'template_type'=> 'list',
-                    'top_element_style' => 'compact',
-                    'elements' => [[
-                    'title' => 'Counting and Results',
-                    'subtitle' => 'Reports on counting of results',
-                    'buttons' => [[
-                            'title' => 'Choose',
-                            'type' => 'postback',
-                            'payload' => 1
-                        ]]],
-                        [
-                    'title' => 'Polling Station Administration',
-                    'subtitle' => 'Reports on issues at polling stations',
-                    'buttons' => [[
-                            'title' => 'Choose',
-                            'type' => 'postback',
-                            'payload' => 4
-                        ]]],
-                        [
-                    'title' => 'Positive Events',
-                    'subtitle' => 'Reports on positive events',
-                    'buttons' => [[
-                            'title' => 'Choose',
-                            'type' => 'postback',
-                            'payload' => 5
-                        ]]],
-                        [
-                    'title' => 'Security Issues',
-                    'subtitle' => 'Reports on incidences of insecurity during the elections',
-                    'buttons' => [[
-                            'title' => 'Choose',
-                            'type' => 'postback',
-                            'payload' => 6
-                        ]]]
-                    ]
+                    'top_element_style' => 'compact'
                 ]
             ]
-       ],['attachment'=> [
-                'type'=> 'template',
-                'payload'=> [
-                    'template_type'=> 'list',
-                    'top_element_style' => 'compact',
-                    'elements' => [
-                        [
-                    'title' => 'Voting Issues',
-                    'subtitle' => 'Reports on voting issues at polling stations',
+        ];
+        foreach ($forms as $key => $form) {
+                if(strlen($form['description']) > 0 ) {
+                    $description = $form['description'];
+                } else {
+                    $description = '-';
+                }
+                $element = [
+                    'title' => $form['name'],
+                    'subtitle' => $description,
                     'buttons' => [[
                             'title' => 'Choose',
                             'type' => 'postback',
-                            'payload' => 7
-                        ]]],
-                        [
-                    'title' => 'Staffing Issues',
-                    'subtitle' => 'Reports on issues with IEBC/Observers staffing at polling stations',
-                    'buttons' => [[
-                            'title' => 'Choose',
-                            'type' => 'postback',
-                            'payload' => 8
-                        ]]],
-                        [
-                    'title' => 'Other',
-                    'subtitle' => 'Reports that do not fit into any other category.',
-                    'buttons' => [[
-                            'title' => 'Choose',
-                            'type' => 'postback',
-                            'payload' => 9
-                        ]]]
-                    ]
-                ]
-            ]
-       ]
-       ];
-            
-        // $forms = $this->platform->getForms();
-        // if(count($forms) === 0) {
-        //     sleep(10);
-        //     $forms = $this->platform->getForms();
-        // }
-        // $replies = [['text' => 'What kind of issue would you like to report?']];
-        // $elements = [];
-        // $reply = [
-        //     'attachment'=> [
-        //         'type'=> 'template',
-        //         'payload'=> [
-        //             'template_type'=> 'list',
-        //             'top_element_style' => 'compact'
-        //         ]
-        //     ]
-        // ];
-        // foreach ($forms as $key => $form) {
-        //         if(strlen($form['description']) > 0 ) {
-        //             $description = $form['description'];
-        //         } else {
-        //             $description = '-';
-        //         }
-        //         $element = [
-        //             'title' => $form['name'],
-        //             'subtitle' => $description,
-        //             'buttons' => [[
-        //                     'title' => 'Choose',
-        //                     'type' => 'postback',
-        //                     'payload' => $form['id']
-        //                 ]]
-        //         ];
-        //         array_push($elements, $element);
+                            'payload' => $form['id']
+                        ]]
+                ];
+                array_push($elements, $element);
 
-        //         if(($key+1) % 4 == 0 || $key+1 == count($forms)) {
-        //             $reply['attachment']['payload']['elements'] = $elements;
-        //             array_push($replies, $reply);
-        //             $elements = [];
-        //         }
-        //     }
-        //     \Log::info(print_r($replies, true));
-        //     return $replies;
+                if(($key+1) % 4 == 0 || $key+1 == count($forms)) {
+                    $reply['attachment']['payload']['elements'] = $elements;
+                    array_push($replies, $reply);
+                    $elements = [];
+                }
+            }
+            return $replies;
     }
     /**
     * Fetch attributes from platform and initialise a report in report-database 
