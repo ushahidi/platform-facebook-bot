@@ -78,7 +78,6 @@ class FBMessenger
             $message_type = 'text';
             $message = 'not readable';
         }
-        \Log::info(print_r($ongoingReport['last_question'], true));
         /* starting the conversation */                
         if($recipient !== $messageId) {
             if($message_type === 'location received') {
@@ -89,7 +88,6 @@ class FBMessenger
 
             // getting the bot-answer from database 
             $answers = Answer::where('command', '=', $command)->first();
-            \Log::info(print_r($answers, true));
             if(!empty($answers) && $message_type !== 'location received') {
                 $reply = unserialize($answers->answers);
                 // delete $ongoingReport if user do something that is not connected to the reporting-flow
