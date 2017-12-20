@@ -41,16 +41,13 @@ class FBMessenger
     **/
     public function startConversation(Request $request) 
     {
-
         // the user_id we will reply to
         $recipient = $request->input(self::SENDER_ID);
 
         // the message id
         $messageId = $request->input(self::MESSAGE_ID);
-        
         // if the user have an ongoing report, we fetch it from database.
         $ongoingReport = Report::where('user_id', $recipient)->first();
-
         /* reading the message from FB */
         
         // When the user send a written-message
@@ -74,11 +71,13 @@ class FBMessenger
             $message = $request->input(self::LOCATION);
         }
         // When the user makes a response we have not configured
-        else {
+        else if($ongoingReport['last_question'] === 'image location') {
+            $message_type = 'location received';
+            $message = 'no location';
+        } else {
             $message_type = 'text';
             $message = 'not readable';
         }
-
         /* starting the conversation */                
         if($recipient !== $messageId) {
             if($message_type === 'location received') {
@@ -89,7 +88,6 @@ class FBMessenger
 
             // getting the bot-answer from database 
             $answers = Answer::where('command', '=', $command)->first();
-
             if(!empty($answers) && $message_type !== 'location received') {
                 $reply = unserialize($answers->answers);
                 // delete $ongoingReport if user do something that is not connected to the reporting-flow
@@ -100,24 +98,10 @@ class FBMessenger
                 }
                 // initialise report if user wants to start reporting
                 if($command === 'make report') {
-                    $reply = $this->formatForms();
-                }
+                    $this->initialiseReport($recipient);}
                 // send a reply to the user
                 $this->sendMessage($reply, $recipient);
-            } else if($message_type === 'payload' && is_numeric($message)) {
-                    // saving the formId the user choose to report to
-                    $formId = $message;
-                    if(!$ongoingReport) {
-                        $this->initialiseReport($recipient, $formId);
-                    } else {
-                        $attributes = $this->platform->getAttributes($formId);
-                        $ongoingReport->form_id = $formId;
-                        $ongoingReport->attributes = json_encode($attributes);
-                        $ongoingReport->save();
-                    }
-                    $answers = Answer::where('command', '=', 'make report')->first();
-                    $this->sendMessage(unserialize($answers->answers), $recipient);
-            } else if($ongoingReport) {
+            }  else if($ongoingReport) {
                 // go to the reporting flow if there is an ongoing report
                 $this->reportingFlow($ongoingReport, $message, $recipient, $message_type);
             } else if($message_type === 'url') {
@@ -137,61 +121,15 @@ class FBMessenger
         }
         return response('Accepted', 200);
     }
-
-    private function formatForms () {
-      $forms = $this->platform->getForms();
-        if(count($forms) === 0) {
-            sleep(10);
-            $forms = $this->platform->getForms();
-        }
-        $replies = [['text' => 'What kind of issue would you like to report?']];
-        $elements = [];
-        $reply = [
-            'attachment'=> [
-                'type'=> 'template',
-                'payload'=> [
-                    'template_type'=> 'list',
-                    'top_element_style' => 'compact'
-                ]
-            ]
-        ];
-        foreach ($forms as $key => $form) {
-                if(strlen($form['description']) > 0 ) {
-                    $description = $form['description'];
-                } else {
-                    $description = '-';
-                }
-                $element = [
-                    'title' => $form['name'],
-                    'subtitle' => $description,
-                    'buttons' => [[
-                            'title' => 'Choose',
-                            'type' => 'postback',
-                            'payload' => $form['id']
-                        ]]
-                ];
-                array_push($elements, $element);
-
-                if(($key+1) % 4 == 0 || $key+1 == count($forms)) {
-                    $reply['attachment']['payload']['elements'] = $elements;
-                    array_push($replies, $reply);
-                    $elements = [];
-                }
-            }
-            return $replies;
-    }
     /**
     * Fetch attributes from platform and initialise a report in report-database 
     * $param string $recipient This is the facebook user-id
     * $param string $image Image-url sent by user
     */
-    private function initialiseReport($recipient, $formId, $image = null) {
-        if($formId) {
+    private function initialiseReport($recipient, $image = null) {
+        $formId = $this->config['ushahidi']['platform_form_id'];
             $attributes = $this->platform->getAttributes($formId);
-        } else {
-            $attributes = null;
-        }
-        Report::create(['user_id' => $recipient, 'form_id' => intval($formId), 'attributes'=> json_encode($attributes), 'replies'=> json_encode(['content' => ' ', 'image'=> $image]), 'last_question' => 'make report']);
+        Report::create(['user_id' => $recipient, 'attributes'=> json_encode($attributes), 'replies'=> json_encode(['content' => ' ', 'image'=> $image]), 'last_question' => 'make report']);
     }
 
     /**
@@ -245,13 +183,7 @@ class FBMessenger
             }
             $ongoingReport->save();
         } else if($ongoingReport->last_question === 'image location'){
-            if($message_type === 'text') {
-                // if the user sends multiple texts, we add them to the report-text
-                $replies->content = $replies->content . ' ' . $message;
-                $ongoingReport->replies = json_encode($replies);
-                $ongoingReport->save();
-                $nextQuestion = 'image location';
-            } else if($message_type === 'url') {
+            if($message_type === 'url') {
                 // saving image
                 $replies->image = $message;
                 $ongoingReport->replies = json_encode($replies);
@@ -265,17 +197,34 @@ class FBMessenger
                 }
             } else if($message_type === 'location received') {
                 // saves the location
-                $replies->location = ['lat' => $message['lat'], 'lon' => $message['long']];
+
+                if(isset($message['lat'])) {
+                    $replies->location = ['lat' => $message['lat'], 'lon' => $message['long']];
+                } else {
+                    $replies->last_question = 'location';
+                }
                 $ongoingReport->replies = json_encode($replies);
                 $ongoingReport->save();
-                if(!isset($replies->image)) {
+                if(isset($message['lat']) && !isset($replies->image)) {
                     // when the user has shared location but there is no image saved
-                    $nextQuestion = 'location received';    
+                    $nextQuestion = 'location received';
+                } else if (!isset($message['lat'])) {
+                    $nextQuestion = 'no location';
                 } else {
                     // if the user has saved location and image, we ask if they want to save report to platform
                     $nextQuestion = 'send report';
                 }
-            } else if($message_type='payload') {
+            } else if($message_type === 'text') {
+                // if the user sends multiple texts, we add them to the report-text
+                $replies->content = $replies->content . ' ' . $message;
+                $ongoingReport->replies = json_encode($replies);
+                $ongoingReport->save();
+                if(isset($replies->last_question) && $replies->last_question === 'location') {
+                    $nextQuestion = 'location received';
+                } else { 
+                    $nextQuestion = 'image location';
+                }
+            }else if($message_type='payload') {
                 // saving report to platform
                 $nextQuestion = $this->platform->savePost($ongoingReport);
                 $ongoingReport->delete();
