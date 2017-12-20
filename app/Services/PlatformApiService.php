@@ -79,7 +79,7 @@ class PlatformApiService
         }
 
         $data->title = substr($data->content, 0, 15) . '...';
-        $data->form = ['id' => $ongoingReport->form_id];
+        $data->form = ['id' => env('PLATFORM_FORM_ID')];
         // finally, save the post to the platform-api
         $header = ['Content-Type' => 'text/json'];
         try {
@@ -141,27 +141,4 @@ class PlatformApiService
         return $attributes;
     }
 
-    public function getForms() {
-        $client = $this->getClient();
-        try {
-            $response = $client->get('/api/v3/forms');
-            $contents = $response->getBody();
-            $contents = json_decode($contents);
-            $forms = [];
-            foreach ($contents->results as $content) {
-                // if-statement is a temporary hack for Uchaguzi
-                if($content->id < 10) {
-                    $form = [];
-                    $form['id'] = $content->id;
-                    $form['name'] = $content->name;
-                    $form['description'] = $content->description;
-                    array_push($forms, $form);
-                }
-            }
-        } catch (ClientException $e) {
-            $forms = [];
-            \Log::ERROR('error when fetching forms' . $e->getMessage());
-        }
-        return $forms;
-    }
 }

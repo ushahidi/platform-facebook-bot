@@ -18,6 +18,8 @@ class CreateAnswersTable extends Migration
             $table->string('command');
             $table->string('language');
             $table->longText('answers');
+            $table->boolean('reporting_flow')->default(false);
+
         });
     }
 
