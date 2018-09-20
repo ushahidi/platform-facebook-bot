@@ -67,9 +67,6 @@ class PlatformApiService
             if($attribute->label === 'location') {
                 if(!empty($data->location) && !empty($data->location->lat) && !empty($data->location->lon)) {
                     $data->values[$attribute->key] = [$data->location];    
-                } else {
-                    // adding default location if no or faulty location is sent
-                    $data->values[$attribute->key] = [['lon' => 36.817245, 'lat' => -1.283253]];
                 }
             } else if($attribute->label === 'image' && isset($mediaId)) {
                 $data->values[$attribute->key]=[$mediaId];
