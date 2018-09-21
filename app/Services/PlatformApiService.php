@@ -67,6 +67,8 @@ class PlatformApiService
             if($attribute->label === 'location') {
                 if(!empty($data->location) && !empty($data->location->lat) && !empty($data->location->lon)) {
                     $data->values[$attribute->key] = [$data->location];    
+                } else {
+                    $data->location = null;
                 }
             } else if($attribute->label === 'image' && isset($mediaId)) {
                 $data->values[$attribute->key]=[$mediaId];
