@@ -1,9 +1,0 @@
-/vendor
-composer.phar
-.env.*.php
-.env.php
-.idea
-.vagrant
-.env
-curls.txt
-misc.txt
